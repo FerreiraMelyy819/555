@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-child: "ZCOOL KuaiLe", cursive;
+  --font-writing: "Ma Shan Zheng", cursive;
+}
+
+body {
+  @apply bg-[#FFFBF5] text-[#4A4A4A];
+  font-family: var(--font-sans);
+}
+
+.card-container {
+  @apply bg-white rounded-[32px] border-2 border-[#F0E6D2] p-8 shadow-sm transition-all hover:shadow-md;
+}
+
+.step-badge {
+  @apply text-white text-xs px-2 py-0.5 rounded-md font-bold uppercase;
+}
+
+.child-text {
+  font-family: var(--font-child);
+}
+
+.writing-text {
+  font-family: var(--font-writing);
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
