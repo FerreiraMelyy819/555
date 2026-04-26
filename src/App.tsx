@@ -14,7 +14,10 @@ import {
   Save,
   Tag,
   Type as TypeIcon,
-  Pause
+  Pause,
+  GitBranch,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { processText, ReadingMaterial } from './services/apiService';
 
@@ -41,6 +44,8 @@ export default function App() {
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [view, setView] = useState<'home' | 'library'>('home');
   const [library, setLibrary] = useState<SavedArticle[]>([]);
+  const [revealedQa, setRevealedQa] = useState<number[]>([]);
+  const [revealedCt, setRevealedCt] = useState<number[]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem('teacher_library');
@@ -71,6 +76,8 @@ export default function App() {
     if (!inputText.trim()) return;
     setLoading(true);
     setErrorMsg(null);
+    setRevealedQa([]);
+    setRevealedCt([]);
     try {
       const result = await processText(inputText);
       setMaterial(result);
@@ -120,6 +127,14 @@ export default function App() {
       setLibrary(newLibrary);
       localStorage.setItem('teacher_library', JSON.stringify(newLibrary));
     }
+  };
+
+  const toggleQa = (idx: number) => {
+    setRevealedQa(prev => prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]);
+  };
+
+  const toggleCt = (idx: number) => {
+    setRevealedCt(prev => prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]);
   };
 
   return (
@@ -345,6 +360,12 @@ export default function App() {
                     <div className="flex items-center gap-3 mb-4">
                       <span className="bg-[#FF9F43] step-badge">Step 3</span>
                       <h2 className="text-xl font-bold text-[#FF9F43] child-text">【儿歌背诵版】</h2>
+                      <button 
+                         onClick={() => handlePlayAudio(material.rhymeVersion, 'rhyme')}
+                         className="ml-auto text-xs text-[#FF9F43] font-bold hover:underline py-2 px-3 bg-white/50 rounded-full"
+                      >
+                        {playingAudioId === 'rhyme' ? '🔊 正在读儿歌' : '▶ 朗读儿歌'}
+                      </button>
                     </div>
                     <div className="flex-1 flex flex-wrap items-center justify-center gap-8">
                        <div className="text-center px-4 w-full">
@@ -358,18 +379,59 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
+                <div className="bg-[#EBF5FF] rounded-[32px] p-8 flex flex-col shadow-sm border-2 border-[#D1E8FF]">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="bg-[#4D96FF] step-badge">Step 4</span>
+                    <h2 className="text-xl font-bold text-[#4D96FF] child-text flex items-center gap-2">
+                       <GitBranch className="w-6 h-6" /> 【精读思维导图】
+                    </h2>
+                  </div>
+                  <div className="bg-white/80 rounded-2xl p-8 border border-[#D1E8FF] shadow-inner">
+                    <pre className="text-lg text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">
+                      {material.mindMap}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
                 <div className="bg-[#F0FFEB] rounded-[32px] p-8 flex flex-col shadow-sm border-2 border-[#D6EFD6]">
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="bg-[#6BCB77] step-badge">Step 4</span>
+                    <span className="bg-[#6BCB77] step-badge">Step 5</span>
                     <h2 className="text-xl font-bold text-[#6BCB77] child-text">【百科问答版】</h2>
+                    <span className="text-xs text-[#6BCB77] opacity-60 ml-2">提示：点击气泡显示解析</span>
                   </div>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {material.qaVersion.map((item, idx) => (
-                      <div key={idx} className="bg-white/80 rounded-2xl p-5 border border-[#E0EFE0] shadow-sm">
+                      <div 
+                        key={idx} 
+                        className="bg-white/80 rounded-2xl p-5 border border-[#E0EFE0] shadow-sm cursor-pointer hover:bg-white transition-all group"
+                        onClick={() => toggleQa(idx)}
+                      >
                         <p className="text-xs font-bold text-[#888] mb-1">老师问：</p>
                         <p className="text-lg font-bold text-[#2D2D2D] mb-2">{item.question}</p>
                         <p className="text-xs font-bold text-[#6BCB77] mb-1">宝贝答：</p>
-                        <p className="text-base text-[#4A4A4A] italic bg-[#F0FFEB]/30 p-2 rounded-lg">{item.answer}</p>
+                        <div className="relative min-h-[40px]">
+                          <AnimatePresence mode="wait">
+                            {revealedQa.includes(idx) ? (
+                              <motion.p 
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-base text-[#4A4A4A] italic bg-[#F0FFEB]/30 p-2 rounded-lg"
+                              >
+                                {item.answer}
+                              </motion.p>
+                            ) : (
+                              <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="flex items-center justify-center p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-slate-400 text-sm font-bold gap-2"
+                              >
+                                <Eye className="w-4 h-4" /> 点击看答案
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -455,12 +517,35 @@ export default function App() {
                       <div>
                         <h4 className="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
                           <div className="w-2 h-6 bg-red-400 rounded-full" /> 思辨小问答
+                          <span className="text-[10px] text-slate-400 font-normal ml-2">点击查看解析</span>
                         </h4>
                         <div className="space-y-4">
                           {material.readingNotes.criticalThinking.map((item, idx) => (
-                            <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div 
+                              key={idx} 
+                              className="bg-slate-50 p-4 rounded-xl border border-slate-200 cursor-pointer hover:border-red-200 transition-all"
+                              onClick={() => toggleCt(idx)}
+                            >
                               <p className="font-bold text-slate-700 mb-1">Q: {item.question}</p>
-                              <p className="text-slate-500 text-sm italic">A: {item.answer}</p>
+                              <AnimatePresence mode="wait">
+                                {revealedCt.includes(idx) ? (
+                                  <motion.p 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    className="text-slate-500 text-sm italic mt-2 pt-2 border-t border-slate-200"
+                                  >
+                                    A: {item.answer}
+                                  </motion.p>
+                                ) : (
+                                  <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="text-[10px] text-red-300 font-bold flex items-center gap-1 mt-2"
+                                  >
+                                    <EyeOff className="w-3 h-3" /> 点击显示思考提示
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
                           ))}
                         </div>

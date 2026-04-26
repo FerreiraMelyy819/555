@@ -2,6 +2,7 @@ export interface ReadingMaterial {
   originalText: string;
   storyVersion: string;
   rhymeVersion: string;
+  mindMap: string;
   qaVersion: { question: string; answer: string }[];
   readingNotes: {
     summary: string;
