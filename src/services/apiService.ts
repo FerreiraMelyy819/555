@@ -25,7 +25,8 @@ export async function processText(text: string): Promise<ReadingMaterial> {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to process text via server");
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `服务器返回错误: ${response.status}`);
   }
 
   return response.json();

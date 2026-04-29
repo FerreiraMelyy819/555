@@ -17,7 +17,10 @@ import {
   Pause,
   GitBranch,
   Eye,
-  EyeOff
+  EyeOff,
+  Star,
+  CheckCircle,
+  Trophy
 } from 'lucide-react';
 import avatarImg from './assets/images/cute_teacher_avatar_1777014170457.png';
 import { processText, ReadingMaterial } from './services/apiService';
@@ -32,6 +35,8 @@ interface SavedArticle {
   category: string;
   material: ReadingMaterial;
   createdAt: number;
+  isFavorite?: boolean;
+  isCompleted?: boolean;
 }
 
 export default function App() {
@@ -84,7 +89,7 @@ export default function App() {
       setMaterial(result);
     } catch (error: any) {
       console.error("Error processing text:", error);
-      setErrorMsg("处理失败，请检查网络或者是 API KEY 是否正确（设置 -> 环境变量 -> DEEPSEEK_API_KEY）。");
+      setErrorMsg(error.message || "处理失败，请检查网络或者是 API KEY 是否正确。");
     } finally {
       setLoading(false);
     }
@@ -134,9 +139,29 @@ export default function App() {
     setRevealedQa(prev => prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]);
   };
 
+  const toggleFavorite = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const newLibrary = library.map(article => 
+      article.id === id ? { ...article, isFavorite: !article.isFavorite } : article
+    );
+    setLibrary(newLibrary);
+    localStorage.setItem('teacher_library', JSON.stringify(newLibrary));
+  };
+
+  const toggleCompleted = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const newLibrary = library.map(article => 
+      article.id === id ? { ...article, isCompleted: !article.isCompleted } : article
+    );
+    setLibrary(newLibrary);
+    localStorage.setItem('teacher_library', JSON.stringify(newLibrary));
+  };
+
   const toggleCt = (idx: number) => {
     setRevealedCt(prev => prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]);
   };
+
+  const currentSavedArticle = library.find(a => a.title === title);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FFFBF5]">
@@ -170,35 +195,79 @@ export default function App() {
                initial={{ opacity: 0, x: 20 }}
                animate={{ opacity: 1, x: 0 }}
                exit={{ opacity: 0, x: -20 }}
-               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+               className="space-y-6"
              >
-               {library.length === 0 ? (
-                 <div className="col-span-full py-20 text-center text-slate-400">
-                   <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                   <p className="text-xl font-bold child-text italic">书架空空如也，快去精读文章吧！</p>
+               {/* Progress Reminder */}
+               {library.length > 0 && (
+                 <div className="bg-gradient-to-r from-orange-400 to-amber-400 rounded-3xl p-6 text-white flex items-center justify-between shadow-lg shadow-orange-200">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-white/20 p-3 rounded-2xl">
+                        <Trophy className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold">学习进度提醒</h3>
+                        <p className="opacity-90">你已经收藏了 {library.length} 篇文章，完成了 {library.filter(a => a.isCompleted).length} 篇！加油哦！</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-4xl font-black">{Math.round((library.filter(a => a.isCompleted).length / library.length) * 100) || 0}%</span>
+                      <p className="text-[10px] uppercase font-bold opacity-70">完成率</p>
+                    </div>
                  </div>
-               ) : (
-                 library.map(article => (
-                   <motion.div 
-                     key={article.id}
-                     whileHover={{ y: -5 }}
-                     onClick={() => { setMaterial(article.material); setTitle(article.title); setView('home'); }}
-                     className="bg-white p-6 rounded-3xl border-2 border-[#F0E6D2] cursor-pointer relative group"
-                   >
-                     <div className="flex justify-between items-start mb-2">
-                       <span className="bg-sky-100 text-sky-600 text-[10px] px-2 py-0.5 rounded font-bold">{article.category}</span>
-                       <button 
-                         onClick={(e) => deleteFromLibrary(article.id, e)}
-                         className="md:opacity-0 group-hover:opacity-100 p-2 text-red-300 hover:text-red-500 transition-all bg-red-50 md:bg-transparent rounded-full"
-                       >
-                         <X className="w-4 h-4" />
-                       </button>
-                     </div>
-                     <h3 className="text-xl font-bold text-slate-800 child-text line-clamp-1">{article.title}</h3>
-                     <p className="text-slate-400 text-xs mt-2">{new Date(article.createdAt).toLocaleDateString()}</p>
-                   </motion.div>
-                 ))
                )}
+
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {library.length === 0 ? (
+                   <div className="col-span-full py-20 text-center text-slate-400">
+                     <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                     <p className="text-xl font-bold child-text italic">书架空空如也，快去精读文章吧！</p>
+                   </div>
+                 ) : (
+                   library.map(article => (
+                     <motion.div 
+                       key={article.id}
+                       whileHover={{ y: -5 }}
+                       onClick={() => { setMaterial(article.material); setTitle(article.title); setView('home'); }}
+                       className={`bg-white p-6 rounded-3xl border-2 transition-all cursor-pointer relative group ${article.isCompleted ? 'border-emerald-200 bg-emerald-50/10' : 'border-[#F0E6D2]'}`}
+                     >
+                       <div className="flex justify-between items-start mb-2">
+                         <div className="flex gap-2">
+                           <span className="bg-sky-100 text-sky-600 text-[10px] px-2 py-0.5 rounded font-bold">{article.category}</span>
+                           {article.isCompleted && <span className="bg-emerald-100 text-emerald-600 text-[10px] px-2 py-0.5 rounded font-bold">已读完</span>}
+                         </div>
+                         <div className="flex items-center gap-1">
+                           <button 
+                             onClick={(e) => toggleFavorite(article.id, e)}
+                             className={`p-1.5 rounded-full transition-all ${article.isFavorite ? 'text-amber-400 opacity-100' : 'text-slate-300 md:opacity-0 group-hover:opacity-100 hover:text-amber-400'}`}
+                           >
+                             <Star className={`w-5 h-5 ${article.isFavorite ? 'fill-amber-400' : ''}`} />
+                           </button>
+                           <button 
+                             onClick={(e) => deleteFromLibrary(article.id, e)}
+                             className="md:opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-500 transition-all bg-red-50 md:bg-transparent rounded-full"
+                           >
+                             <X className="w-4 h-4" />
+                           </button>
+                         </div>
+                       </div>
+                       <h3 className="text-xl font-bold text-slate-800 child-text line-clamp-1 flex items-center gap-2">
+                         {article.title}
+                         {article.isFavorite && <Star className="w-3 h-3 text-amber-400 fill-amber-400" />}
+                       </h3>
+                       <div className="flex justify-between items-center mt-4">
+                         <p className="text-slate-400 text-[10px]">{new Date(article.createdAt).toLocaleDateString()}</p>
+                         <button 
+                           onClick={(e) => toggleCompleted(article.id, e)}
+                           className={`flex items-center gap-1 text-[10px] font-bold px-3 py-1 rounded-full transition-all ${article.isCompleted ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400 hover:bg-emerald-100 hover:text-emerald-600'}`}
+                         >
+                           <CheckCircle className="w-3 h-3" />
+                           {article.isCompleted ? '已完成' : '记为已学'}
+                         </button>
+                       </div>
+                     </motion.div>
+                   ))
+                 )}
+               </div>
              </motion.div>
           ) : !material ? (
             <motion.div 
@@ -305,24 +374,43 @@ export default function App() {
                 <div className="flex items-center gap-4">
                   <div className="px-4 py-1 bg-sky-100 text-sky-600 rounded-full text-xs font-bold">{category === '自定义分类' ? customCategory : category}</div>
                   <h2 className="text-3xl font-bold text-slate-800 child-text">{title}</h2>
+                  {currentSavedArticle?.isFavorite && <Star className="w-6 h-6 text-amber-400 fill-amber-400 animate-pulse" />}
                 </div>
-                <button 
-                  onClick={saveToLibrary}
-                  className="px-6 py-2 bg-orange-100 text-orange-600 rounded-full font-bold flex items-center gap-2 hover:bg-orange-200 transition-all border border-orange-200"
-                >
-                  <Save className="w-4 h-4" /> 保存到精读本
-                </button>
-                {library.some(a => a.title === title) && (
-                  <button 
-                    onClick={(e) => {
-                      const article = library.find(a => a.title === title);
-                      if (article) deleteFromLibrary(article.id, e as any);
-                    }}
-                    className="px-6 py-2 bg-red-50 text-red-400 rounded-full font-bold flex items-center gap-2 hover:bg-red-100 transition-all border border-red-100"
-                  >
-                    <X className="w-4 h-4" /> 删除此文
-                  </button>
-                )}
+                <div className="flex gap-2 w-full md:w-auto">
+                  {!currentSavedArticle ? (
+                    <button 
+                      onClick={saveToLibrary}
+                      className="px-6 py-2 bg-orange-100 text-orange-600 rounded-full font-bold flex items-center gap-2 hover:bg-orange-200 transition-all border border-orange-200"
+                    >
+                      <Save className="w-4 h-4" /> 保存到精读本
+                    </button>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={() => toggleFavorite(currentSavedArticle.id)}
+                        className={`px-4 py-2 rounded-full font-bold flex items-center gap-2 transition-all border ${currentSavedArticle.isFavorite ? 'bg-amber-100 text-amber-600 border-amber-200' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-amber-50'}`}
+                      >
+                        <Star className={`w-4 h-4 ${currentSavedArticle.isFavorite ? 'fill-amber-600' : ''}`} />
+                        {currentSavedArticle.isFavorite ? '已收藏' : '收藏'}
+                      </button>
+                      <button 
+                        onClick={() => toggleCompleted(currentSavedArticle.id)}
+                        className={`px-4 py-2 rounded-full font-bold flex items-center gap-2 transition-all border ${currentSavedArticle.isCompleted ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-emerald-50'}`}
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        {currentSavedArticle.isCompleted ? '已学完' : '记为已学'}
+                      </button>
+                    </>
+                  )}
+                  {currentSavedArticle && (
+                    <button 
+                      onClick={(e) => deleteFromLibrary(currentSavedArticle.id, e as any)}
+                      className="px-4 py-2 bg-red-50 text-red-400 rounded-full font-bold flex items-center gap-2 hover:bg-red-100 transition-all border border-red-100"
+                    >
+                      <X className="w-4 h-4" /> 删除
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-8">

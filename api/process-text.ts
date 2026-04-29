@@ -1,26 +1,19 @@
-import express from "express";
-import { createServer as createViteServer } from "vite";
-import path from "path";
-import { fileURLToPath } from "url";
-import dotenv from "dotenv";
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-const app = express();
-const PORT = Number(process.env.PORT) || 3000;
-
-app.use(express.json());
-
-// DeepSeek API Proxy
-app.post("/api/process-text", async (req, res) => {
   const { text } = req.body;
   const apiKey = process.env.DEEPSEEK_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: "DEEPSEEK_API_KEY is not configured" });
+    console.error("Missing DEEPSEEK_API_KEY");
+    return res.status(500).json({ error: "服务器 API KEY 未配置，请在 Vercel 控制台设置" });
   }
 
   try {
@@ -65,34 +58,11 @@ app.post("/api/process-text", async (req, res) => {
     }
 
     let resultText = data.choices[0].message.content;
-    
-    // Clean up markdown code blocks if the model included them
     resultText = resultText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
     
     res.json(JSON.parse(resultText));
-  } catch (error) {
+  } catch (error: any) {
     console.error("DeepSeek API error:", error);
-    res.status(500).json({ error: "Failed to process text" });
-  }
-});
-
-async function setupServer() {
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    // 采用动态导入，避免在生产环境下尝试加载开发依赖
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-    
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server locally running on http://localhost:${PORT}`);
-    });
+    res.status(500).json({ error: error.message || "Failed to process text" });
   }
 }
-
-setupServer();
-
-export default app;
