@@ -19,9 +19,10 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
+import avatarImg from './assets/images/cute_teacher_avatar_1777014170457.png';
 import { processText, ReadingMaterial } from './services/apiService';
 
-const AVATAR_URL = "/src/assets/images/cute_teacher_avatar_1777014170457.png";
+const AVATAR_URL = avatarImg;
 
 type Category = '知识画报' | '博物课堂' | '杂志好奇号' | '自定义分类';
 
@@ -188,7 +189,7 @@ export default function App() {
                        <span className="bg-sky-100 text-sky-600 text-[10px] px-2 py-0.5 rounded font-bold">{article.category}</span>
                        <button 
                          onClick={(e) => deleteFromLibrary(article.id, e)}
-                         className="opacity-0 group-hover:opacity-100 p-2 text-red-300 hover:text-red-500 transition-all"
+                         className="md:opacity-0 group-hover:opacity-100 p-2 text-red-300 hover:text-red-500 transition-all bg-red-50 md:bg-transparent rounded-full"
                        >
                          <X className="w-4 h-4" />
                        </button>
@@ -311,6 +312,17 @@ export default function App() {
                 >
                   <Save className="w-4 h-4" /> 保存到精读本
                 </button>
+                {library.some(a => a.title === title) && (
+                  <button 
+                    onClick={(e) => {
+                      const article = library.find(a => a.title === title);
+                      if (article) deleteFromLibrary(article.id, e as any);
+                    }}
+                    className="px-6 py-2 bg-red-50 text-red-400 rounded-full font-bold flex items-center gap-2 hover:bg-red-100 transition-all border border-red-100"
+                  >
+                    <X className="w-4 h-4" /> 删除此文
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
