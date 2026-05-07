@@ -20,7 +20,10 @@ import {
   EyeOff,
   Star,
   CheckCircle,
-  Trophy
+  Trophy,
+  Globe,
+  Lightbulb,
+  Newspaper
 } from 'lucide-react';
 import avatarImg from './assets/images/cute_teacher_avatar_1777014170457.png';
 import { processText, ReadingMaterial } from './services/apiService';
@@ -52,6 +55,7 @@ export default function App() {
   const [library, setLibrary] = useState<SavedArticle[]>([]);
   const [revealedQa, setRevealedQa] = useState<number[]>([]);
   const [revealedCt, setRevealedCt] = useState<number[]>([]);
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('teacher_library');
@@ -195,8 +199,32 @@ export default function App() {
                initial={{ opacity: 0, x: 20 }}
                animate={{ opacity: 1, x: 0 }}
                exit={{ opacity: 0, x: -20 }}
-               className="space-y-6"
+               className="space-y-8"
              >
+               {/* Category Dashboard */}
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                 {[
+                   { id: '知识画报', icon: Newspaper, color: 'bg-sky-50 text-sky-600 border-sky-100', label: '知识画报' },
+                   { id: '博物课堂', icon: Globe, color: 'bg-emerald-50 text-emerald-600 border-emerald-100', label: '博物课堂' },
+                   { id: '杂志好奇号', icon: Lightbulb, color: 'bg-amber-50 text-amber-600 border-amber-100', label: '好奇号' },
+                   { id: '自定义分类', icon: Tag, color: 'bg-purple-50 text-purple-600 border-purple-100', label: '其他/自定义' }
+                 ].map((cat) => (
+                   <button
+                     key={cat.id}
+                     onClick={() => setFilterCategory(filterCategory === cat.id ? null : cat.id)}
+                     className={`flex flex-col items-center justify-center p-6 rounded-[32px] border-2 transition-all group ${cat.color} ${filterCategory === cat.id ? 'ring-4 ring-offset-2 ring-opacity-50 ring-current scale-105' : 'hover:scale-105 shadow-sm'}`}
+                   >
+                     <div className="p-3 bg-white rounded-2xl mb-3 shadow-sm group-hover:rotate-12 transition-transform">
+                       <cat.icon className="w-8 h-8" />
+                     </div>
+                     <span className="font-black text-sm">{cat.label}</span>
+                     <span className="text-[10px] opacity-60 mt-1">
+                       {library.filter(a => a.category === cat.id || (cat.id === '自定义分类' && !['知识画报', '博物课堂', '杂志好奇号'].includes(a.category))).length} 篇
+                     </span>
+                   </button>
+                 ))}
+               </div>
+
                {/* Progress Reminder */}
                {library.length > 0 && (
                  <div className="bg-gradient-to-r from-orange-400 to-amber-400 rounded-3xl p-6 text-white flex items-center justify-between shadow-lg shadow-orange-200">
@@ -216,14 +244,35 @@ export default function App() {
                  </div>
                )}
 
+               <div className="flex items-center justify-between">
+                 <h3 className="text-xl font-bold text-slate-700 flex items-center gap-2">
+                   <BookOpen className="w-6 h-6 text-sky-400" />
+                   {filterCategory ? `来自 “${filterCategory}” 的文章` : '我的所有收藏'}
+                 </h3>
+                 {filterCategory && (
+                   <button 
+                     onClick={() => setFilterCategory(null)}
+                     className="text-xs text-sky-500 font-bold hover:underline"
+                   >
+                     清除筛选
+                   </button>
+                 )}
+               </div>
+
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  {library.length === 0 ? (
                    <div className="col-span-full py-20 text-center text-slate-400">
                      <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" />
                      <p className="text-xl font-bold child-text italic">书架空空如也，快去精读文章吧！</p>
                    </div>
+                 ) : library.filter(a => !filterCategory || a.category === filterCategory || (filterCategory === '自定义分类' && !['知识画报', '博物课堂', '杂志好奇号'].includes(a.category))).length === 0 ? (
+                   <div className="col-span-full py-20 text-center text-slate-400">
+                     <p className="text-lg font-bold italic">该分类下还没有文章哦~</p>
+                   </div>
                  ) : (
-                   library.map(article => (
+                   library
+                    .filter(a => !filterCategory || a.category === filterCategory || (filterCategory === '自定义分类' && !['知识画报', '博物课堂', '杂志好奇号'].includes(a.category)))
+                    .map(article => (
                      <motion.div 
                        key={article.id}
                        whileHover={{ y: -5 }}
@@ -275,13 +324,46 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="card-container max-w-2xl mx-auto mt-12"
+              className="max-w-4xl mx-auto space-y-12 mt-6 mb-20"
             >
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <span className="bg-[#FF6B6B] step-badge">第一步</span>
-                  <h2 className="text-xl font-bold text-[#FF6B6B] child-text">基本信息：</h2>
-                </div>
+              {/* Quick Access Dashboard */}
+              <div className="space-y-4">
+                 <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    <h3 className="text-lg font-bold text-slate-700">快去读读这些吧：</h3>
+                 </div>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                   {[
+                     { id: '知识画报', icon: Newspaper, color: 'border-sky-200 bg-sky-50/50 text-sky-600', label: '知识画报' },
+                     { id: '博物课堂', icon: Globe, color: 'border-emerald-200 bg-emerald-50/50 text-emerald-600', label: '博物课堂' },
+                     { id: '杂志好奇号', icon: Lightbulb, color: 'border-amber-200 bg-amber-50/50 text-amber-600', label: '好奇号' },
+                     { id: '自定义分类', icon: Tag, color: 'border-purple-200 bg-purple-50/50 text-purple-600', label: '我的收藏' }
+                   ].map((cat) => (
+                     <button
+                       key={cat.id}
+                       onClick={() => { setFilterCategory(cat.id); setView('library'); }}
+                       className={`flex items-center gap-3 p-4 rounded-2xl border-2 hover:scale-105 transition-all text-left group bg-white ${cat.color}`}
+                     >
+                       <div className="p-2 bg-white rounded-xl shadow-sm group-hover:rotate-6 transition-transform">
+                         <cat.icon className="w-6 h-6" />
+                       </div>
+                       <div>
+                         <p className="font-bold text-sm leading-tight">{cat.label}</p>
+                         <p className="text-[10px] opacity-60">
+                           {library.filter(a => a.category === cat.id || (cat.id === '自定义分类' && !['知识画报', '博物课堂', '杂志好奇号'].includes(a.category))).length} 篇内容
+                         </p>
+                       </div>
+                     </button>
+                   ))}
+                 </div>
+              </div>
+
+              <div className="card-container max-w-2xl mx-auto shadow-xl shadow-[#F0E6D2]/50 border-2 border-white">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <span className="bg-[#FF6B6B] step-badge">开始精读</span>
+                    <h2 className="text-xl font-bold text-[#FF6B6B] child-text">输入一段美文：</h2>
+                  </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -362,8 +444,9 @@ export default function App() {
                   {loading ? '精读中...' : '开始精读'}
                 </button>
               </div>
-            </motion.div>
-          ) : (
+            </div>
+          </motion.div>
+        ) : (
             <motion.div 
               key="results"
               initial={{ opacity: 0 }}
